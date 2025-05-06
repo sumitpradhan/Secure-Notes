@@ -21,9 +21,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.sql.DataSource;
 import java.time.LocalDate;
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -40,13 +44,31 @@ public class SecurityConfig {
         return new AuthTokenFIlter();
     }
 
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration corsConfig = new CorsConfiguration();
+        // Allow specific origins
+        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+
+        // Allow specific HTTP methods
+        corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // Allow specific headers
+        corsConfig.setAllowedHeaders(Arrays.asList("*"));
+        // Allow credentials (cookies, authorization headers)
+        corsConfig.setAllowCredentials(true);
+        corsConfig.setMaxAge(3600L);
+        // Define allowed paths (for all paths use "/**")
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfig); // Apply to all endpoints
+        return source;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.csrf(csrf -> csrf.disable())
+        httpSecurity.cors(c->c.configurationSource(corsConfigurationSource())).csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(request ->
                         request.
-                                requestMatchers("/api/public/**").permitAll()
+                                requestMatchers("/api/auth/public/**").permitAll()
                                 .anyRequest().authenticated()
                                 )
                 .httpBasic(Customizer.withDefaults())
