@@ -16,7 +16,6 @@ import java.time.*;
 //Spring security doesn't know how to use this User class, it dependes upon the userDetails
 @Entity
 @Data
-@NoArgsConstructor
 @Getter
 @Table(name = "users",
         uniqueConstraints = {
@@ -81,6 +80,9 @@ public class User{
     public User(String userName, String email) {
         this.userName = userName;
         this.email = email;
+    }
+
+    public User() {
     }
 
     @Override

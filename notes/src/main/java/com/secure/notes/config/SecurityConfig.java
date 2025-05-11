@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -44,6 +45,11 @@ public class SecurityConfig {
         return new AuthTokenFIlter();
     }
 
+
+    @Autowired
+    @Lazy
+    OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
@@ -69,8 +75,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request ->
                         request.
                                 requestMatchers("/api/auth/public/**").permitAll()
+                                .requestMatchers("/oauth2/**").permitAll()
                                 .anyRequest().authenticated()
                                 )
+                .oauth2Login(oauth2->{
+                        oauth2.successHandler(oAuth2LoginSuccessHandler);
+                })
                 .httpBasic(Customizer.withDefaults())
         .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
         .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
