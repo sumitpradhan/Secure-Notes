@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtils {
@@ -31,11 +32,16 @@ public class JwtUtils {
         }
         return null;
     }
+
     //this method generates jwt from username, userdetails being passed
     public String generateTokenFromUsername(UserDetails userDetails){
         String userName= userDetails.getUsername();
+        String roles = userDetails.getAuthorities().stream()
+                .map(authority->authority.getAuthority())
+                .collect(Collectors.joining(","));
         return Jwts.builder()
                 .subject(userName)
+                .claim("roles",roles)
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key())

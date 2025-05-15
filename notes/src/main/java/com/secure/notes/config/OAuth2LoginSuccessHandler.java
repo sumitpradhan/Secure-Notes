@@ -29,10 +29,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -106,6 +103,7 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
             Map<String, Object> attributes = principal.getAttributes();
             String email =fetchGitHubEmail(oAuth2AuthenticationToken);
             String name = attributes.getOrDefault("name", "").toString();
+           // attributes.
             if ("github".equals(oAuth2AuthenticationToken.getAuthorizedClientRegistrationId())) {
                 username = attributes.getOrDefault("login", "").toString();
                 idAttributeKey = "id";
@@ -161,9 +159,19 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
         Map<String, Object> attributes = oauth2User.getAttributes();
 
         // Extract necessary attributes
-        String email = (String) attributes.get("email");
+       // String email = (String) attributes.get("email");
+        String email =fetchGitHubEmail(oAuth2AuthenticationToken);
         System.out.println("OAuth2LoginSuccessHandler: " + username + " : " + email);
 
+        Set<SimpleGrantedAuthority> authorities= new HashSet<>(
+                oauth2User.getAuthorities().stream()
+                        .map(authority -> new SimpleGrantedAuthority(authority.getAuthority()))
+                        .collect(Collectors.toList())
+        );
+        User user = userService.findByEmail(email).orElseThrow(
+                ()->new RuntimeException("User not found")
+        );
+        authorities.add(new SimpleGrantedAuthority(user.getRole().getRoleName().name()));
         // Create UserDetailsImpl instance
         UserDetailsImpl userDetails = new UserDetailsImpl(
                 null,
@@ -171,9 +179,7 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
                 email,
                 null,
                 false,
-                oauth2User.getAuthorities().stream()
-                        .map(authority -> new SimpleGrantedAuthority(authority.getAuthority()))
-                        .collect(Collectors.toList())
+                authorities
         );
 
         // Generate JWT token
